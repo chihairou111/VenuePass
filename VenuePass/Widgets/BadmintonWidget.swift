@@ -10,9 +10,10 @@ import Supabase
 
 struct BadmintonWidget: View {
     @Binding var availableCount: Int
+    @Binding var dailyCount: Int
     var body: some View {
         NavigationStack {
-            NavigationLink(destination: Badminton()) {
+            NavigationLink(destination: Badminton(dailyCount: $dailyCount)) {
                 HStack {
                     //Image
                     Image(systemName: "figure.badminton")
@@ -40,7 +41,7 @@ struct BadmintonWidget: View {
                     .padding()
                 }
                 .frame(width: 380, height: 100)
-                .background(Color.blue.opacity(0.5))
+                .background(Color.blue.opacity(0.6))
                 .clipShape(RoundedRectangle(cornerRadius:20))
             }
         }
@@ -50,5 +51,5 @@ struct BadmintonWidget: View {
 }
 
 #Preview {
-    BadmintonWidget(availableCount: .constant(3))
+    BadmintonWidget(availableCount: .constant(3), dailyCount: .constant(1))
 }

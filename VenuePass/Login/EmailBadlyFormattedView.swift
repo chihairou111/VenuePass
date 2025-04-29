@@ -25,10 +25,10 @@ struct EmailBadlyFormattedView: View {
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 self.isShowing = false
+
             }
         }
-        
-    }
+    }                       
 }
 
 #Preview {

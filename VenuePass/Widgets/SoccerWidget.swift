@@ -36,7 +36,7 @@ struct SoccerWidget: View {
             .padding()
         }
         .frame(width: 380, height: 100)
-        .background(Color.green.opacity(0.5))
+        .background(Color.green.opacity(0.6))
         .clipShape(RoundedRectangle(cornerRadius:15))
     }
 }

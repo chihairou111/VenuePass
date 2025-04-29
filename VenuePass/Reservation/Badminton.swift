@@ -11,40 +11,61 @@ import Supabase
 struct BadmintonData: Decodable, Identifiable {
     var id: Int { time }          // ForEach 键
     let time: Int                 // 800 / 830 / …
-    var availability: Bool?       // true / false / nil
+    var availability: String     // true / false / nil
     let user: String?
 }
 
 struct CourtSlotView: View {
     let slot: BadmintonData
-
+    @Binding var dailyCount: Int
     private var backgroundColor: Color {
-        if slot.availability == true {
+        if slot.availability == "free" {
             return Color.green.opacity(0.6)
-        } else if slot.availability == false {
+        } else if slot.availability == "occupied" {
             return Color.red.opacity(0.6)
         } else {
             return Color.gray.opacity(0.3)
         }
     }
     
-    
+    @State private var showConfirmation = false
 
     var body: some View {
         VStack {
             Text("\(slot.time / 100):\(String(format: "%02d", slot.time % 100))")
                 .bold()
                 .foregroundStyle(.white)
-            Text(slot.availability == true ? "空闲" :
-                 slot.availability == false ? "已满" : "未开放")
-                .bold()
-                .foregroundStyle(.white)
+            if slot.availability == "occupied" {
+                Text("已满")
+                    .bold()
+                    .foregroundStyle(.white)
+            } else if slot.availability == "free" {
+                Text("空闲")
+                    .bold()
+                    .foregroundStyle(.white)
+            } else {
+                Text("未开放")
+                    .bold()
+                    .foregroundStyle(.white)
+            }
+               
+        }
+        .onTapGesture {
+            // Only trigger when availability is "free" AND dailyCount is 2 or less
+            if slot.availability == "free" && dailyCount <= 2 {
+                showConfirmation = true
+            }
         }
         .frame(width: 90, height: 60)
         .background(
             RoundedRectangle(cornerRadius: 5)
                 .fill(backgroundColor)
         )
+        .sheet(isPresented: $showConfirmation) {
+            BadmintonConfirmation(time: .constant(slot.time), dailyCount: $dailyCount)
+                .presentationDetents([.height(400)])
+        }
+
     }
 }
 
@@ -89,7 +110,7 @@ struct Badminton: View {
     @State private var row2: [BadmintonData] = []
     @State private var row3: [BadmintonData] = []
     @State private var row4: [BadmintonData] = []
-
+    @Binding var dailyCount: Int
     private var allLoaded: Bool {
             !row1.isEmpty && !row2.isEmpty && !row3.isEmpty && !row4.isEmpty
         }
@@ -107,25 +128,25 @@ struct Badminton: View {
                                 Text("1号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row1) { CourtSlotView(slot: $0) }
+                                ForEach(row1) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
                             }
                             VStack {
                                 Text("2号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row2) { CourtSlotView(slot: $0) }
+                                ForEach(row2) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
                             }
                             VStack {
                                 Text("3号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row3) { CourtSlotView(slot: $0) }
+                                ForEach(row3) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
                             }
                             VStack {
                                 Text("4号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row4) { CourtSlotView(slot: $0)}
+                                ForEach(row4) { CourtSlotView(slot: $0, dailyCount: $dailyCount)}
                             }
                         }
                         .padding(.horizontal)
@@ -163,5 +184,6 @@ struct Badminton: View {
 
 
 #Preview {
-    Badminton()
+    Badminton(dailyCount: .constant(1))
 }
+
