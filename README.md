@@ -5,8 +5,8 @@
 **Developer:** ***Bruce Zheng***
 
 TODO:
-- [] Reservation for different venues
-- [] Cancel reservation
-- [] Button to view reservations
-- [] Push notifications
-- [] Meeting room reservations
+- [ ] Reservation for different venues
+- [ ] Cancel reservation
+- [ ] Button to view reservations
+- [ ] Push notifications
+- [ ] Meeting room reservations
