@@ -17,12 +17,20 @@ struct BadmintonData: Decodable, Identifiable {
 
 struct CourtSlotView: View {
     let slot: BadmintonData
-    @Binding var dailyCount: Int
+    @Binding var BadmintonDailyCount: Int
+    @Binding var needRefresh: Bool
+    @AppStorage("userEmail") private var userEmail: String = ""
     private var backgroundColor: Color {
         if slot.availability == "free" {
             return Color.green.opacity(0.6)
         } else if slot.availability == "occupied" {
-            return Color.red.opacity(0.6)
+            if let user = slot.user, user == userEmail {
+                return Color.blue.opacity(0.3)
+            } else {
+                return Color.red.opacity(0.6)
+            }
+        } else if slot.availability == "notopen" {
+            return Color.gray.opacity(0.3)
         } else {
             return Color.gray.opacity(0.3)
         }
@@ -35,7 +43,11 @@ struct CourtSlotView: View {
             Text("\(slot.time / 100):\(String(format: "%02d", slot.time % 100))")
                 .bold()
                 .foregroundStyle(.white)
-            if slot.availability == "occupied" {
+            if let user = slot.user, user == userEmail && slot.availability == "occupied" {
+                Text("已预定")
+                    .bold()
+                    .foregroundStyle(.white)
+            } else if slot.availability == "occupied" {
                 Text("已满")
                     .bold()
                     .foregroundStyle(.white)
@@ -43,16 +55,17 @@ struct CourtSlotView: View {
                 Text("空闲")
                     .bold()
                     .foregroundStyle(.white)
-            } else {
+            } else if slot.availability == "notopen" {
                 Text("未开放")
                     .bold()
                     .foregroundStyle(.white)
             }
                
         }
+
         .onTapGesture {
-            // Only trigger when availability is "free" AND dailyCount is 2 or less
-            if slot.availability == "free" && dailyCount <= 2 {
+            // Only trigger when availability is "free" AND BadmintonBadmintonDailyCount is 2 or less
+            if slot.availability == "free"/* && BadmintonDailyCount <= 2*/ {
                 showConfirmation = true
             }
         }
@@ -62,7 +75,7 @@ struct CourtSlotView: View {
                 .fill(backgroundColor)
         )
         .sheet(isPresented: $showConfirmation) {
-            BadmintonConfirmation(time: .constant(slot.time), dailyCount: $dailyCount)
+            BadmintonConfirmation(time: .constant(slot.time), BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh)
                 .presentationDetents([.height(400)])
         }
 
@@ -110,7 +123,8 @@ struct Badminton: View {
     @State private var row2: [BadmintonData] = []
     @State private var row3: [BadmintonData] = []
     @State private var row4: [BadmintonData] = []
-    @Binding var dailyCount: Int
+    @Binding var BadmintonDailyCount: Int
+    @State var needRefresh = false
     private var allLoaded: Bool {
             !row1.isEmpty && !row2.isEmpty && !row3.isEmpty && !row4.isEmpty
         }
@@ -128,32 +142,34 @@ struct Badminton: View {
                                 Text("1号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row1) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
+                                ForEach(row1) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
                             }
                             VStack {
                                 Text("2号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row2) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
+                                ForEach(row2) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
                             }
                             VStack {
                                 Text("3号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row3) { CourtSlotView(slot: $0, dailyCount: $dailyCount) }
+                                ForEach(row3) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
                             }
                             VStack {
                                 Text("4号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row4) { CourtSlotView(slot: $0, dailyCount: $dailyCount)}
+                                ForEach(row4) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh)}
                             }
                         }
                         .padding(.horizontal)
                     }
                     
                 }
-                .navigationTitle("羽毛球")
+                .navigationTitle(BadmintonDailyCount != 0
+                    ? "羽毛球(\(BadmintonDailyCount))"
+                    : "羽毛球")
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
@@ -163,7 +179,17 @@ struct Badminton: View {
             .scrollIndicators(.hidden)
             .task {
                 await loadAll()
+                if needRefresh {
+                    await loadAll()
+                }
             }
+            .onChange(of: needRefresh) { newValue in
+                    // 当 needRefresh 变为 true 时才刷新一次
+                    if newValue {
+                        Task { await loadAll() }
+                        needRefresh = false   // 重置标志
+                    }
+                }
 
         }
     @MainActor
@@ -184,6 +210,6 @@ struct Badminton: View {
 
 
 #Preview {
-    Badminton(dailyCount: .constant(1))
+    Badminton(BadmintonDailyCount: .constant(1))
 }
 

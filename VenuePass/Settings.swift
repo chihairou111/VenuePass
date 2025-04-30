@@ -3,7 +3,7 @@ import Supabase
 
 struct Settings: View {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
-    @State private var supabaseUserEmail: String?
+    @AppStorage("userEmail") private var userEmail: String = ""
 
     var body: some View {
         NavigationStack {
@@ -19,8 +19,8 @@ struct Settings: View {
 
                             VStack(alignment: .leading) {
                                 // email
-                                if let email = supabaseUserEmail {
-                                    Text("\(email)")
+                                if !userEmail.isEmpty {
+                                    Text("\(userEmail)")
                                 } else {
                                     Text("未登录")
                                 }
@@ -30,18 +30,7 @@ struct Settings: View {
                             }
                         }
                         .padding()
-                        .task {
-                            do {
-                                if let user = try await client.auth.currentUser {
-                                    supabaseUserEmail = user.email
-                                } else {
-                                    supabaseUserEmail = nil
-                                }
-                            } catch {
-                                print("获取 Supabase 用户信息失败: \(error)")
-                                supabaseUserEmail = nil
-                            }
-                        }
+
 
                         Button(role: .destructive) {
                             Task {

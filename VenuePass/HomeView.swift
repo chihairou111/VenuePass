@@ -13,12 +13,12 @@ struct HomeView: View {
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     @State private var showSheet = false
     @State private var availableCount = 0
-    @Binding var dailyCount: Int
+    @Binding var BadmintonDailyCount: Int
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 10) {
-                    BadmintonWidget(availableCount: $availableCount, dailyCount: $dailyCount)
+                    BadmintonWidget(availableCount: $availableCount, BadmintonDailyCount: $BadmintonDailyCount)
                     SoccerWidget()
                 }
             }
@@ -62,6 +62,6 @@ struct HomeView: View {
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeView(dailyCount: .constant(1))
+        HomeView(BadmintonDailyCount: .constant(1))
     }
 }

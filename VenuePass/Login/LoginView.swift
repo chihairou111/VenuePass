@@ -19,7 +19,7 @@ struct LoginView: View {
     @State private var showAccountExistsView = false
     @State private var showShortPasswordView = false
     @State private var showPasswordRequirementView = false
-
+    @AppStorage("userEmail") private var userEmail: String = ""
     @AppStorage("isLoggedIn") private var isLoggedIn = false
 
     var body: some View {
@@ -221,6 +221,18 @@ struct LoginView: View {
                 showAccountErrorView = true
             }
         }
+        do {
+            if var user = try await client.auth.currentUser {
+                userEmail = user.email ?? ""
+                print(userEmail)
+            } else {
+                userEmail = ""
+                print("Failed!")
+            }
+        } catch {
+            print("获取 Supabase 用户信息失败: \(error)")
+            userEmail = ""
+        }
     }
     
     // MARK: - 注册
@@ -231,18 +243,18 @@ struct LoginView: View {
 //        self.showRegisterSuccessView = false
 //        self.showEmailBadlyFormattedView = false
 //        self.showAccountExistsView = false
-//        
+//
 //        Auth.auth().createUser(withEmail: email, password: password) { _, err in
 //            DispatchQueue.main.async {
 //                if let err = err as NSError? {
 //                    let code = err.code
 //                    let description = err.localizedDescription
 //                    let name = err.userInfo["FIRAuthErrorUserInfoNameKey"] as? String ?? "未知错误"
-//                    
+//
 //                    print("🚨 注册错误代码: \(code)")
 //                    print("🚨 注册错误名字: \(name)")
 //                    print("🚨 注册错误描述: \(description)")
-//                    
+//
 //                    switch code {
 //                    case 17008, 17004: // invalidEmail or invalidCredential
 //                        self.showEmailBadlyFormattedView = true

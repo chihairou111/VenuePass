@@ -14,7 +14,7 @@ import SwiftUI
 
 @main
 struct VenuePassApp: App {
-    @AppStorage("dailyCount") private var dailyCount: Int = 0
+    @AppStorage("BadmintonDailyCount") private var BadmintonDailyCount: Int = 0
     @AppStorage("lastResetDate") private var lastResetDate: String = ""
     @AppStorage("isLoggedIn") private var isLoggedIn = false
     
@@ -25,7 +25,7 @@ struct VenuePassApp: App {
     var body: some Scene {
         WindowGroup {
             if isLoggedIn {
-                HomeView(dailyCount: $dailyCount)
+                HomeView(BadmintonDailyCount: $BadmintonDailyCount)
             } else {
                 LoginView()
             }
@@ -41,7 +41,7 @@ struct VenuePassApp: App {
 
             // 2. 如果上次重置不是今天，就清零并记录新日期
             if lastResetDate != today {
-                dailyCount = 0
+                BadmintonDailyCount = 0
                 lastResetDate = today
             }
         }

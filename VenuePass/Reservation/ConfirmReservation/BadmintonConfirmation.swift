@@ -10,23 +10,28 @@ import Supabase
 
 struct BadmintonConfirmation: View {
     @Binding var time: Int
-    @State var supabaseUserEmail: String? = nil
+    @AppStorage("userEmail") private var userEmail: String = ""
     @State private var isSuccess = false
     @Environment(\.dismiss) private var dismiss
     @State private var animateCheck = false
-    @Binding var dailyCount: Int
+    @Binding var BadmintonDailyCount: Int
+    @Binding var needRefresh: Bool
     @MainActor
     private func confirmBooking() async {
         do {
             try await client
                 .from("badminton_court1")
-                .update(["availability": "occupied", "user": supabaseUserEmail])
+                .update(["availability": "occupied", "user": userEmail])
                 .eq("time", value: time)
                 .execute()
             
             // Ignore response details, mark success directly
             isSuccess = true
-            dailyCount += 1
+            BadmintonDailyCount += 1
+            needRefresh = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                needRefresh = false
+            }
         } catch {
             print("Unexpected error:", error)
         }
@@ -60,19 +65,8 @@ struct BadmintonConfirmation: View {
                     .background(RoundedRectangle(cornerRadius: 20))
                 
             }
-            .task {
-                do {
-                    if let user = try await client.auth.currentUser {
-                        supabaseUserEmail = user.email
-                    } else {
-                        supabaseUserEmail = nil
-                    }
-                } catch {
-                    print("获取 Supabase 用户信息失败: \(error)")
-                    supabaseUserEmail = nil
-                }
-            }
         }
+
         } else {
             ZStack {
                 Rectangle()
@@ -100,5 +94,5 @@ struct BadmintonConfirmation: View {
 }
 
 #Preview {
-    BadmintonConfirmation(time: .constant(900), dailyCount: .constant(1))
+    BadmintonConfirmation(time: .constant(900), BadmintonDailyCount: .constant(1), needRefresh: .constant(false))
 }
