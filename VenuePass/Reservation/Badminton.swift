@@ -19,6 +19,7 @@ struct CourtSlotView: View {
     let slot: BadmintonData
     @Binding var BadmintonDailyCount: Int
     @Binding var needRefresh: Bool
+    let courtNumber: Int
     @AppStorage("userEmail") private var userEmail: String = ""
     private var backgroundColor: Color {
         if slot.availability == "free" {
@@ -37,7 +38,7 @@ struct CourtSlotView: View {
     }
     
     @State private var showConfirmation = false
-
+    
     var body: some View {
         VStack {
             Text("\(slot.time / 100):\(String(format: "%02d", slot.time % 100))")
@@ -60,12 +61,9 @@ struct CourtSlotView: View {
                     .bold()
                     .foregroundStyle(.white)
             }
-               
         }
-
         .onTapGesture {
-            // Only trigger when availability is "free" AND BadmintonBadmintonDailyCount is 2 or less
-            if slot.availability == "free"/* && BadmintonDailyCount <= 2*/ {
+            if slot.availability == "free" && BadmintonDailyCount <= 2 {
                 showConfirmation = true
             }
         }
@@ -75,44 +73,16 @@ struct CourtSlotView: View {
                 .fill(backgroundColor)
         )
         .sheet(isPresented: $showConfirmation) {
-            BadmintonConfirmation(time: .constant(slot.time), BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh)
+            BadmintonConfirmation(time: .constant(slot.time), BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh, courtNumber: courtNumber)
                 .presentationDetents([.height(400)])
         }
-
     }
 }
 
-func fetchCourt1() async throws -> [BadmintonData] {
-    try await client            // ← 你的全局 SupabaseClient
-        .from("badminton_court1")
-        .select()                // 列名和模型字段一一对应
-        .order("time")
-        .execute()
-        .value
-}
-
-func fetchCourt2() async throws -> [BadmintonData] {
-    try await client            // ← 你的全局 SupabaseClient
-        .from("badminton_court2")
-        .select()                // 列名和模型字段一一对应
-        .order("time")
-        .execute()
-        .value
-}
-
-func fetchCourt3() async throws -> [BadmintonData] {
-    try await client            // ← 你的全局 SupabaseClient
-        .from("badminton_court3")
-        .select()                // 列名和模型字段一一对应
-        .order("time")
-        .execute()
-        .value
-}
-
-func fetchCourt4() async throws -> [BadmintonData] {
-    try await client            // ← 你的全局 SupabaseClient
-        .from("badminton_court4")
-        .select()                // 列名和模型字段一一对应
+func fetchCourt(courtNumber: Int) async throws -> [BadmintonData] {
+    try await client
+        .from("badminton_court\(courtNumber)")
+        .select()
         .order("time")
         .execute()
         .value
@@ -126,8 +96,8 @@ struct Badminton: View {
     @Binding var BadmintonDailyCount: Int
     @State var needRefresh = false
     private var allLoaded: Bool {
-            !row1.isEmpty && !row2.isEmpty && !row3.isEmpty && !row4.isEmpty
-        }
+        !row1.isEmpty && !row2.isEmpty && !row3.isEmpty && !row4.isEmpty
+    }
     
     var body: some View {
         NavigationStack {
@@ -142,30 +112,29 @@ struct Badminton: View {
                                 Text("1号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row1) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
+                                ForEach(row1) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh, courtNumber: 1) }
                             }
                             VStack {
                                 Text("2号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row2) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
+                                ForEach(row2) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh, courtNumber: 2) }
                             }
                             VStack {
                                 Text("3号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row3) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh) }
+                                ForEach(row3) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh, courtNumber: 3) }
                             }
                             VStack {
                                 Text("4号")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                ForEach(row4) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh)}
+                                ForEach(row4) { CourtSlotView(slot: $0, BadmintonDailyCount: $BadmintonDailyCount, needRefresh: $needRefresh, courtNumber: 4) }
                             }
                         }
                         .padding(.horizontal)
                     }
-                    
                 }
                 .navigationTitle(BadmintonDailyCount != 0
                     ? "羽毛球(\(BadmintonDailyCount))"
@@ -173,32 +142,30 @@ struct Badminton: View {
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
-            .refreshable {
-                await loadAll()
-            }
-            .scrollIndicators(.hidden)
-            .task {
-                await loadAll()
-                if needRefresh {
-                    await loadAll()
-                }
-            }
-            .onChange(of: needRefresh) { newValue in
-                    // 当 needRefresh 变为 true 时才刷新一次
-                    if newValue {
-                        Task { await loadAll() }
-                        needRefresh = false   // 重置标志
-                    }
-                }
-
+        .refreshable {
+            await loadAll()
         }
+        .scrollIndicators(.hidden)
+        .task {
+            await loadAll()
+            if needRefresh {
+                await loadAll()
+            }
+        }
+        .onChange(of: needRefresh) { newValue in
+            if newValue {
+                Task { await loadAll() }
+                needRefresh = false
+            }
+        }
+    }
     @MainActor
         func loadAll() async {
             do {
-                async let d1 = fetchCourt1()
-                async let d2 = fetchCourt2()
-                async let d3 = fetchCourt3()
-                async let d4 = fetchCourt4()
+                async let d1 = fetchCourt(courtNumber: 1)
+                async let d2 = fetchCourt(courtNumber: 2)
+                async let d3 = fetchCourt(courtNumber: 3)
+                async let d4 = fetchCourt(courtNumber: 4)
                 let (r1, r2, r3, r4) = try await (d1, d2, d3, d4)
                 row1 = r1; row2 = r2; row3 = r3; row4 = r4
             } catch {
@@ -212,4 +179,3 @@ struct Badminton: View {
 #Preview {
     Badminton(BadmintonDailyCount: .constant(1))
 }
-

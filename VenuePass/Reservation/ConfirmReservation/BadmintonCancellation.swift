@@ -1,35 +1,31 @@
 //
-//  BadmintonConfirmation.swift
+//  BadmintonCancellation.swift
 //  VenuePass
 //
-//  Created by Bruce Zheng on 4/29/25.
+//  Created by Bruce Zheng on 5/1/25.
 //
-
 import SwiftUI
-import Supabase
 
-struct BadmintonConfirmation: View {
+struct BadmintonCancellation: View {
     @Binding var time: Int
-    @AppStorage("userEmail") private var userEmail: String = ""
     @State private var isSuccess = false
     @Environment(\.dismiss) private var dismiss
     @State private var animateCheck = false
     @Binding var BadmintonDailyCount: Int
     @Binding var needRefresh: Bool
-    let courtNumber: Int
-    
+    @Binding var number: Int
     @MainActor
-    private func confirmBooking() async {
+    private func cancelBooking() async {
         do {
             try await client
-                .from("badminton_court\(courtNumber)")
-                .update(["availability": "occupied", "user": userEmail])
+                .from("badminton_court\(number)")
+                .update(["availability": "free", "user": ""])
                 .eq("time", value: time)
                 .execute()
             
             // Ignore response details, mark success directly
             isSuccess = true
-            BadmintonDailyCount += 1
+            BadmintonDailyCount -= 1
             needRefresh = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                 needRefresh = false
@@ -50,13 +46,13 @@ struct BadmintonConfirmation: View {
                 .bold()
                 .font(.system(size: 50))
             
-            Text("确定要预订此时段吗？")
+            Text("确定要取消此时段吗？")
                 .bold()
                 .font(.system(size: 30))
             
             Button {
                 Task {
-                    await confirmBooking()
+                    await cancelBooking()
                 }
             } label: {
                 Text("确认")
@@ -96,5 +92,5 @@ struct BadmintonConfirmation: View {
 }
 
 #Preview {
-    BadmintonConfirmation(time: .constant(900), BadmintonDailyCount: .constant(1), needRefresh: .constant(false), courtNumber: 1)
+    BadmintonCancellation(time: .constant(900), BadmintonDailyCount: .constant(1), needRefresh: .constant(false), number: .constant(1))
 }
